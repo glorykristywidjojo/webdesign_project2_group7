@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title> Login </title>
+        <link rel="stylesheet" href="../../css/style.css">
+        <script src="../../js/jquery-3.7.1.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                $(".login-page-form").on("submit", function(e) {
+                    e.preventDefault();
+                    const username = $("input[name='uname']").val().trim();
+                    const password = $("input[name='psw']").val().trim();
+
+                    if (username.length < 5) {
+                        event.preventDefault();
+                        alert('Username must be at least 5 characters long.');
+                        $("#username").focus();
+                        return;
+                    }
+
+                    if (password.length < 8) {
+                        event.preventDefault();
+                        alert('Password must be at least 8 characters long.');
+                        $("#password").focus();
+                        return;
+                    }
+
+                    if (username === "" || password === "") {
+                        alert("Please enter both username and password.");
+                        return;
+                    }
+
+                    window.location.href = "../main.html";
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <a href="../main.html"><button type="button" class="login-page-back-btn">Back</button></a>
+        <form class="login-page-form">
+            <div class="login-page-header">
+                <h2> Login </h2>
+                <a href="register.html"><h2> Register </h2></a>
+            </div>
+            <div class="login-page-container">
+                <label for="uname"><b>Username</b></label>
+                <input type="text" placeholder="Enter Username" name="uname" required class="login-page-input" id="username">
+
+                <label for="psw"><b>Password</b></label>
+                <input type="password" placeholder="Enter Password" name="psw" required class="login-page-input" id="password">
+
+                <button type="submit" class="login-page-submit-btn">Login</button>
+                <label>
+                    <input type="checkbox" checked="checked" name="remember"> Remember me
+                </label>
+                <span class="login-page-password-link">Forgot <a href="../pages/forgotpassword.html">password?</a></span>
+            </div>
+        </form>
+    </body>
+</html>
