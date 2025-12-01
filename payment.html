@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Payment</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="../../../js/style.js"></script>
+    <style>
+    .payment-details,
+    .billing-address {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 10px;
+        width: 600px;
+        margin: 0 auto 25px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .payment-details label,
+    .billing-address label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .payment-details input,
+    .billing-address input {
+        width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 18px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 15px;
+    }
+
+    .payment-details input:focus,
+    .billing-address input:focus {
+        border-color: #ffee00;
+        outline: none;
+        box-shadow: 0 0 3px rgba(0, 119, 255, 0.5);
+    }
+
+    .step-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin: 40px auto;
+    max-width: 600px;
+    padding: 0 20px;
+    }
+
+    .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    }
+
+    .step::after {
+    content: "";
+    position: absolute;
+    left: calc(50% + 20px);
+    top: 18px;
+    width: 100%;
+    height: 3px;
+    background: #e5e7eb;
+    z-index: -1;
+    }
+
+    .step:last-child::after {
+    display: none;
+    }
+
+    .step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    }
+
+    .step.active .step-circle {
+    background: #FF9D00;
+    color: white;
+    box-shadow: 0 4px 8px rgba(255, 157, 0, 0.3);
+    }
+
+    .step.active::after {
+    background: #FF9D00;
+    }
+
+    .step-label {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+    text-align: center;
+    }
+
+    .step.active .step-label {
+    color: #FF9D00;
+    font-weight: 600;
+    }
+
+    @media (max-width: 560px) {
+    .step-progress {
+        gap: 20px;
+    }
+    
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .step::after {
+        top: 16px;
+        height: 2px;
+    }
+    
+    .step-label {
+        font-size: 12px;
+    }
+    }
+
+
+    .plan-trip-hero {
+    text-align: center;
+        padding: 80px 16px;
+        background: linear-gradient(rgba(255, 157, 0, 0.2), rgba(255, 207, 113, 0.3)),center/cover no-repeat;
+        color: rgb(0, 0, 0);
+    }
+
+    .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin: 30px auto;
+        max-width: 600px;
+    }
+
+    .itempurchase-page-submit-btn {
+    background-color: var(--contact-orange);
+    color: #B6771D;
+    border: none;
+    padding: 12.8px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.itempurchase-back-btn { background-color: #B6771D;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    width: fit-content;
+}
+
+.packages-footer {
+  text-align: center;
+  background-color: #7B542F; 
+  color: white; 
+  padding: 32px 16px;
+  margin: 0;
+}
+
+.packages-footer p {
+  margin: 8px 0;
+}
+    </style>
+    <script>
+        $(function() {
+
+            // Helpers
+            function showError($el, msg) {
+                clearError($el);
+                const $err = $('<div class="field-error" style="color:#d00;font-size:12px;margin-top:-12px;margin-bottom:10px;">'+msg+'</div>');
+                $el.after($err);
+            }
+            function clearError($el) {
+                $el.next('.field-error').remove();
+            }
+
+            // Digits only
+            $(".digits").on("input", function () {
+                this.value = this.value.replace(/\D/g, "");
+            });
+
+            // Alphabetic only
+            $(".alphabetic").on("input", function () {
+                this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
+            });
+
+            // Card number validation (exactly 13 digits)
+            $("#card-number").on("blur input", function() {
+                const val = this.value;
+                clearError($(this));
+                if (val && val.length !== 13) {
+                    showError($(this), "Card number must be exactly 13 digits.");
+                }
+            });
+
+            // Expiration date auto-format MM/YY
+            $("#exp-date").on("input", function() {
+                let v = this.value.replace(/[^\d]/g,'').slice(0,4);
+                if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+                this.value = v;
+            }).on("blur", function() {
+                clearError($(this));
+                const v = this.value;
+                if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(v)) {
+                    showError($(this), "Use format MM/YY (valid month 01-12).");
+                }
+            });
+
+            // CVV validation (3 or 4 digits)
+            $("#cvv").on("blur input", function() {
+                const v = this.value;
+                clearError($(this));
+                if (v && !/^\d{3,4}$/.test(v)) {
+                    showError($(this), "CVV must be 3 or 4 digits.");
+                }
+            });
+
+            // ZIP validation (5 digits)
+            $("#zip").on("blur input", function() {
+                const v = this.value;
+                clearError($(this));
+                if (v && !/^\d{5}$/.test(v)) {
+                    showError($(this), "ZIP must be 5 digits.");
+                }
+            });
+
+            // Inline name change feedback (non-intrusive)
+            $("#full-name").on("change", function () {
+                clearError($(this));
+                if (this.value.trim().length < 2) {
+                    showError($(this), "Name too short.");
+                }
+            });
+
+            // Button hover (simple)
+            $("#submitBtn").on("mouseenter", function() {
+                $(this).css("background","var(--contact-orange)");
+            }).on("mouseleave", function() {
+                $(this).css("background","var(--contact-orange)");
+            });
+
+            // Form submission
+            window.validatePaymentForm = function() {
+                let ok = true;
+
+                // Trigger blur validations
+                $("#card-number, #exp-date, #cvv, #zip, #full-name").blur();
+
+                // Required fields native check
+                $('.payment-form [required]').each(function() {
+                    if (!this.value.trim()) {
+                        showError($(this), "This field is required.");
+                        ok = false;
+                    }
+                });
+
+                // If any error elements exist
+                if ($('.field-error').length) ok = false;
+
+                if (ok) {
+                    window.location.href = 'confirmation.html';
+                } else {
+                    alert("Fix validation errors before submitting.");
+                }
+            };
+
+            // Progress bar: mark step 1 completed, step 2 active
+            const steps = document.querySelectorAll('.step');
+            if (steps.length >= 2) {
+                steps[0].classList.add('completed');
+                steps[1].classList.add('active');
+            }
+
+        });
+    </script>
+
+</head>
+<body>
+    <section class="plan-trip-hero">
+      <h2>Plan Your Perfect Trip</h2>
+      <p>Tell us about your travel preferences and we'll craft the perfect itinerary</p>
+    </section>
+
+    <!-- Step Progress Bar -->
+    <div class="step-progress">
+      <div class="step active">
+        <div class="step-circle">1</div>
+        <div class="step-label">Biodata</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <div class="step-label">Payment</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <div class="step-label">Confirmation</div>
+      </div>
+    </div>
+
+    <form class="payment-form">
+        <div class="payment-details">
+            <label for="card-number">Card Number:</label>
+            <input 
+                type="text"
+                id="card-number" 
+                name="card-number" 
+                class="digits"
+                inputmode="numeric"
+                pattern="\d{13}"
+                maxlength="13"
+                autocomplete="cc-number"
+                required 
+            />
+
+            <label for="exp-date">Expiration Date:</label>
+            <input 
+                type="text" 
+                id="exp-date" 
+                name="exp-date" 
+                class="digits"
+                placeholder="MM/YY"
+                pattern="\d{5}"
+                maxlength="5"
+                title="Format: MM/YY"
+                required
+            />
+
+            <label for="cvv">CVV Code:</label>
+            <input 
+                type="text" 
+                id="cvv" 
+                name="cvv"
+                class="digits"
+                inputmode="numeric" 
+                pattern="\d{3,4}"
+                maxlength="4" 
+                required 
+            /> 
+        </div>
+
+        <div class="billing-address">
+            <label for="full-name">Full Name:</label>
+            <input 
+                type="text" 
+                id="full-name" 
+                name="full-name" 
+                class="alphabetic"
+                required 
+            />
+
+            <label for="address">Address:</label>
+            <input 
+                type="text" 
+                id="address" 
+                name="address" 
+                class="alphabetic"
+                required 
+            />
+
+            <label for="city">City:</label>
+            <input 
+                type="text" 
+                id="city" 
+                name="city" 
+                class="alphabetic"
+                required 
+            />
+
+            <label for="zip">ZIP Code:</label>
+            <input 
+                type="text" 
+                id="zip" 
+                name="zip"
+                class="digits"
+                inputmode="numeric" 
+                pattern="\d{5}" 
+                maxlength="5" 
+                required 
+            />
+
+            <label for="country">Country:</label>
+            <input 
+                type="text" 
+                id="country" 
+                name="country" 
+                class="alphabetic"
+                required 
+            />
+        </div>
+        <div class="button-container">
+            <a href="identity.html"><button type="button" class="itempurchase-back-btn">Back</button></a>
+            <button type="button" id="submitBtn" class="itempurchase-page-submit-btn" onclick="validatePaymentForm()">Submit Payment</button>
+        </div>
+    </form>
+</body>
+</html>
